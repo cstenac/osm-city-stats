@@ -1,0 +1,9 @@
+DB_HOST=localhost
+DB_PORT=5433
+DB_DB=XXX
+DB_USER=XXX
+
+JAVA_TMPDIR=$HOME/data/osm/tmp
+
+OSMOSIS_DIR=$HOME/data/osm/osmosis/osmosis.git
+OSMOSIS_BIN=package/bin/osmosis
