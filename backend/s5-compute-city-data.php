@@ -23,7 +23,11 @@
   function get_one_data($query, $name) {
     $res = pg_query($query);
     $array = pg_fetch_array($res);
-    return $array[$name];
+    $data = $array[$name];
+    if (!isset($data)) {
+        $data = "0";
+    }
+    return $data;
   }
 
 
