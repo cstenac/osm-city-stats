@@ -2,6 +2,8 @@ DB_HOST=localhost
 DB_PORT=5433
 DB_DB=XXX
 DB_USER=XXX
+PG_PATH=/usr/lib/postgresql/9.1/bin
+PG_CONTRIB_PATH=/usr/share/postgresql/9.1/contrib
 
 JAVA_TMPDIR=$HOME/data/osm/tmp
 
