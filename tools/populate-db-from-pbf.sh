@@ -11,7 +11,8 @@ JAVACMD_OPTIONS=-Djava.io.tmpdir=$JAVA_TMPDIR
 mkdir -p $JAVA_TMPDIR
 export JAVACMD_OPTIONS
 
-INFILE=$HOME/data/osm/data/bourgogne.osm.pbf
+INFILE=$1
 
 cd $OSMOSIS_DIR
-$OSMOSIS_BIN --read-pbf $INFILE --write-pgsql host=$DB_HOST database=$DB_DB user=$DB_USER
+set -x
+$OSMOSIS_BIN $* --write-pgsql host=$DB_HOST database=$DB_DB user=$DB_USER password=osm

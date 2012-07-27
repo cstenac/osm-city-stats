@@ -22,6 +22,8 @@ First time install
  "Standard OSM steps"
   * Enable PostGIS support on your database using tools/setup-osm-schema.sh
   * Import some OSM data using tools/populate-db-from-pbf.sh
+     - From one pbf file: ./tools/populate-db-from-pbf.sh --read-pbf FILE
+     - From multiple pbf files: ./tools/populate-db-from-pbf.sh --read-pbf FILE1 --read-pbf FILE2 --merge
 
 Running the analysis
 ====================
@@ -44,3 +46,4 @@ TODO / Next steps
  * (P1) Actually generate maps with the data
  * (P1) Ability to historize the data
  * (P2) Ability to have the analysis a bit more incremental
+ * (P1) Performance improvements / Multithreading
