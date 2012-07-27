@@ -17,6 +17,7 @@ create table city_way (
 	tags hstore ,
 	geog geography("LINESTRING", 4326)	
 	); 
+CREATE INDEX idx_city_way_relation_id ON city_way(relation_id);
 
 DROP TABLE IF EXISTS city_closedway;
 create table city_closedway (
@@ -25,8 +26,9 @@ create table city_closedway (
 	tags hstore ,
 	geog geography("POLYGON", 4326)	
 	); 
+CREATE INDEX idx_city_closedway_relation_id ON city_closedway(relation_id);
 
--- Fill of table city_way is done by fill.php
+-- Fill of table city_way is done by s5---.php
 
 -- Create list of nodes for each city
 -- Here we recompute the geometry of each node as a geography for computations
@@ -37,9 +39,9 @@ create table city_node (
 	tags hstore ,
 	geog geography("POINT", 4326)	
 	);  
+CREATE INDEX idx_city_node_relation_id ON city_node(relation_id);
 
-
--- Fill of table city_node is done by fill.php
+-- Fill of table city_node is done by s5---.php
 
 
 
