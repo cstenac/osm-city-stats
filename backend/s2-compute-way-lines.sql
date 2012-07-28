@@ -26,11 +26,11 @@ left join way_nodes on nodes.id=way_nodes.node_id where way_nodes.way_id=ways.id
 -- now we need to add the polyline geometry for every closed way
 INSERT INTO closedway_geometry SELECT ways.id,
  ( SELECT ST_MakePolygon( ST_LineFromMultiPoint(Collect(nodes.geom)) ) FROM nodes
-  LEFT JOIN way_nodes ON nodes.id=way_nodes.node_id WHERE way_nodes.way_id=ways.id                                                              )
+  LEFT JOIN way_nodes ON nodes.id=way_nodes.node_id WHERE way_nodes.way_id=ways.id )
 FROM ways
-WHERE ST_IsClosed( (SELECT ST_LineFromMultiPoint( Collect(n.geom) ) FROM nodes n LEFT JOIN way_nodes wn ON n.id=wn.node_id WHERE ways.id=wn.way_id) )
-AND ST_NumPoints( (SELECT ST_LineFromMultiPoint( Collect(n.geom) ) FROM nodes n LEFT JOIN way_nodes wn ON n.id=wn.node_id WHERE ways.id=wn.way_id) ) >= 4
-;                                                                                                                                            
+  WHERE ST_IsClosed( (SELECT geom from way_geometry WHERE way_id = ways.id))
+  AND ST_NumPoints( (SELECT geom from way_geometry WHERE way_id = ways.id)) >= 4
+;                                                                                                                                           
 
 -- create index on way_geometry
 CREATE INDEX idx_way_geometry_way_id ON way_geometry USING btree (way_id);
