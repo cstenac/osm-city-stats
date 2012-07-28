@@ -51,6 +51,9 @@ CREATE TABLE city_data  (
   area FLOAT,
   highway_length FLOAT,
   highway_count FLOAT,
+  residential_highway_count FLOAT,
+  residential_highway_length FLOAT,
+
   building_count FLOAT,
   building_area FLOAT,
 
@@ -60,5 +63,9 @@ CREATE TABLE city_data  (
   places INTEGER,
   townhalls INTEGER,
   schools INTEGER,
-  pows INTEGER
+  pows INTEGER,
+
+  insee VARCHAR(100),
+  population INTEGER,
+  maire VARCHAR(256)
 );

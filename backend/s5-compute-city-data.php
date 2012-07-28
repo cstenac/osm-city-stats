@@ -4,6 +4,13 @@
    *  the aggregated city data
    */
 
+  $modulo = 1;
+  $selected_modulo = 0;
+
+  if ($argc >= 3) {
+    $modulo = $argv[1];
+    $selected_modulo = $argv[2];
+  }
 
   /* ******************** Utilities ****************** */
 
@@ -41,9 +48,16 @@
   $query = "SELECT id, tags -> 'name' as name from relations WHERE tags -> 'admin_level' = '8'";
   $result = pg_query($query);
 
+  $loop_index = 0;
   while ($line = pg_fetch_array($result, null, PGSQL_ASSOC)) {
     $id = $line["id"];
     $name = $line["name"];
+
+    
+    if ($loop_index++ % $modulo != $selected_modulo) {
+        echo "Ignoring $name ($id) (modulo)\n";
+        continue;
+    }
   
     # Start by cleaning our own data to make this script replayable
     echo "Working for $name ($id)\n";
@@ -65,9 +79,20 @@
 
 
     echo " Computing stats\n";
+    time_start("stats");
+    /* Optional */
+    $insee = get_one_data("SELECT tags -> 'ref:INSEE' as insee FROM relations where id=$id", "insee");
+    $pop = get_one_data("SELECT population from dbpedia_city where insee='$insee'", "population");
+    $maire = get_one_data("SELECT maire from dbpedia_city where insee='$insee'", "maire");
+    /* End optional */
+
+
     $area = get_one_data("SELECT ST_Area(geog) as area FROM city_geom where relation_id=$id", "area");
     $hwl = get_one_data("SELECT SUM(ST_Length(geog)) as length FROM city_way where relation_id=$id and tags ? 'highway'", "length");
     $hwc = get_one_data("SELECT COUNT(*) as count FROM city_way where relation_id=$id and tags ? 'highway'", "count");
+    $rhwl = get_one_data("SELECT SUM(ST_Length(geog)) as length FROM city_way where relation_id=$id and tags -> 'highway' = 'residential'", "length");
+    $rhwc = get_one_data("SELECT COUNT(*) as count FROM city_way where relation_id=$id and tags -> 'highway' = 'residential'", "count");
+  
     $bc = get_one_data("SELECT COUNT(*) as count FROM city_way where relation_id=$id and tags -> 'building' = 'yes'", "count");
     $ba = get_one_data("SELECT SUM(ST_Area(geog)) as area FROM city_closedway where relation_id=$id and tags -> 'building' = 'yes'", "area"); if (!isset($ba)) $ba = 0;
     $rc = get_one_data("SELECT COUNT(*) as count FROM city_way where relation_id=$id and tags -> 'landuse' = 'residential'", "count");
@@ -85,8 +110,9 @@
     $pow = get_one_data("SELECT COUNT(*) AS count FROM city_closedway where relation_id=$id and tags -> 'amenity' = 'place_of_worship'", "count");
     $pow += get_one_data("SELECT COUNT(*) AS count FROM city_node where relation_id=$id and tags -> 'amenity' = 'place_of_worship'", "count");
 
-    $finq =  "INSERT INTO city_data(relation_id, area, highway_length, highway_count, building_count, building_area, residential_count, residential_area, places, townhalls, schools, pows) VALUES($id, $area, $hwl, $hwc, $bc, $ba, $rc, $ra, $place, $townhall,$school, $pow)";
+    $finq =  "INSERT INTO city_data(relation_id, area, highway_length, highway_count, residential_highway_length, residential_highway_count, building_count, building_area, residential_count, residential_area, places, townhalls, schools, pows, insee, population, maire) VALUES($id, $area, $hwl, $hwc, $rhwl, $rhwc, $bc, $ba, $rc, $ra, $place, $townhall,$school, $pow, '$insee', $pop, '$maire')";
     echo "  $finq\n";
     pg_query($finq);
+    time_end("stats");
   }
 ?>
