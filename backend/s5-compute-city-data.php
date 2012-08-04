@@ -13,34 +13,8 @@
     $selected_modulo = $argv[2];
   }
 
-  /* ******************** Utilities ****************** */
-
-  $time_start = 0;
-  function time_start()  {
-    global $time_start;
-    $time_start = microtime(true);
-  }
-
-  function time_end($name) {
-    global $time_start;
-    $time_end = microtime(true);
-    $t = round(($time_end-$time_start)*1000);
-    echo "    $name in $t ms\n";
-  }
-
-  function get_one_data($query, $name) {
-    $res = pg_query($query);
-    $array = pg_fetch_array($res);
-    $data = $array[$name];
-    if (!isset($data)) {
-        $data = "0";
-    }
-    return $data;
-  }
-
-
-  /* ******************** Main ****************** */
-
+  include("timeutils.php");
+  include("dbutils.php");
   include("../config/config.php.inc");
 
   $conn = pg_connect($db_conn_string) or die('Could not connect: ' . pg_last_error());
@@ -67,8 +41,11 @@
     pg_query("DELETE FROM city_way where relation_id=$id");
     echo "Computing city ways for $name ($id) (progress: ".($loop_index-1)."/$count)\n";
     time_start();
-  #  pg_query("INSERT INTO city_way (relation_id, way_id, geog) SELECT $id,w.id,  wg.geom from ways w, city_geom cg, way_geometry wg WHERE wg.way_id = w.id AND ST_Intersects(cg.geom_dump, wg.geom) AND cg.relation_id=$id");
-    pg_query("INSERT INTO city_way SELECT $id,w.id, w.tags,  wg.geom from ways w, city_geom cg, way_geometry wg WHERE wg.way_id = w.id AND ST_Intersects(cg.geom_dump, wg.geom) AND cg.relation_id=$id");
+    if ($has_linestring_in_ways) {
+        safe_dml_query("INSERT INTO city_way SELECT $id,w.id, w.tags,  w.linestring from ways w, city_geom cg WHERE ST_Intersects(cg.geom_dump, w.linestring) AND cg.relation_id=$id");
+    } else {
+        pg_query("INSERT INTO city_way SELECT $id,w.id, w.tags,  wg.geom from ways w, city_geom cg, way_geometry wg WHERE wg.way_id = w.id AND ST_Intersects(cg.geom_dump, wg.geom) AND cg.relation_id=$id");
+    }
     time_end("ways");
   }
   pg_query("COMMIT");
