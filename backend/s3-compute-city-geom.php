@@ -7,9 +7,9 @@
   include("timeutils.php");
   include("dbutils.php");
   include("../config/config.php.inc");
-
-  $conn = pg_connect($db_conn_string) or die('Could not connect: ' . pg_last_error());
-
+  connect($db_conn_string, $db_search_path);
+  safe_dml_query("DELETE FROM city_geom");
+/*
   safe_dml_query("DROP TABLE IF EXISTS city_geom");
   safe_dml_query("CREATE TABLE city_geom(".
       "relation_id INTEGER PRIMARY KEY, ".
@@ -18,7 +18,7 @@
       ")");
   safe_dml_query("SELECT AddGeometryColumn('city_geom', 'geom', 4326, 'GEOMETRY', 2)");
   safe_dml_query("SELECT AddGeometryColumn('city_geom', 'geom_dump', 4326, 'POLYGON', 2)");
-
+*/
   if (!$has_linestring_in_ways) {
     /* Compute a polygon using flat geometry */ 
     safe_dml_query("INSERT INTO city_geom(relation_id, city, geom) ".
@@ -29,13 +29,48 @@
 	"        INNER JOIN relations r on rn.relation_id = r.id ".
     "            AND rn.member_type='W' AND hstore(r.tags) -> 'admin_level' = '8' GROUP BY r.id;");
   } else {
+    $result = pg_query("SELECT id from relations r where r.tags -> 'admin_level' = '8'") or die("Query failed");
+    $beg = microtime(true);
+    $count = 0;
+    $errors = Array();
+    while ($line = pg_fetch_array($result, null, PGSQL_ASSOC)) {
+      $id = $line["id"];
+      $t = round( (microtime(true) - $beg) * 1000);
+      echo "City $id ($count - $t ms total - ".count($errors)." errors)\n";
+ 	$count++;
+/*
+	if ($id == 42288) continue; // Unknown geometry type 0
+	if ($id == 70133) continue; // EXCEPTION IN LWSGEOM
+	if ($id == 75862) continue; // EXCEPTION IN LWSGEOM
+	if ($id == 116834) continue; // EXCEPTION IN LWSGEOM
+	if ($id == 270537) continue; // Geom type 0
+	if ($id == 342898) continue; // OOM
+	if ($id == 405621) continue; // Geom type 0
+	if ($id == 452987) continue; // lwsgeom
+	if ($id == 452997) continue; // lwsgeom
+*/
+       $ret = dml_query("INSERT INTO city_geom(relation_id, city, geom) ".
+    "SELECT r.id, MIN(hstore(r.tags) -> 'name') , ST_Polygonize(ways.linestring) geom ".
+        "FROM ways ".
+        "        INNER JOIN relation_members rn on rn.member_id = ways.id ".
+        "        INNER JOIN relations r  on rn.relation_id = r.id WHERE r.id=$id GROUP BY r.id");
+    
+	if (!$ret) {
+		$errors[$id] = pg_last_error();
+	}
+	}
+	foreach ($errors as $id => $err) {
+		echo "Failed city $id because of $err\n";
+	}
+
     /* Compute a polygon using flat geometry */ 
-    safe_dml_query("INSERT INTO city_geom(relation_id, city, geom) ".
+    /*safe_dml_query("INSERT INTO city_geom(relation_id, city, geom) ".
     "SELECT r.id, MIN(hstore(r.tags) -> 'name') , ST_Polygonize(ways.linestring) geom ".
 	"FROM ways ".
 	"        INNER JOIN relation_members rn on rn.member_id = ways.id ".
 	"        INNER JOIN relations r on rn.relation_id = r.id ".
     "            AND rn.member_type='W' AND hstore(r.tags) -> 'admin_level' = '8' GROUP BY r.id;");
+	*/
   }
 
    safe_dml_query("   UPDATE city_geom SET geom_dump = (ST_Dump(geom)).geom;");

@@ -8,15 +8,9 @@
   
   include("timeutils.php");
   include("../config/config.php.inc");
+  include("dbutils.php");
 
-  function safe_dml_query($query) {
-    $res = pg_query($query) or die ("Failed to execute query $query");
-    $rows = pg_num_rows($res);
-    echo "Done executing $query -- $rows touched";
-  }
-
-  $conn = pg_connect($db_conn_string) or die('Could not connect: ' . pg_last_error());
-
+  connect($db_conn_string, $db_search_path);
 
   /* If we don't have it, compute a geometrical LINESTRING for each way in the OSM database */
   if (!$has_linestring_in_ways) {

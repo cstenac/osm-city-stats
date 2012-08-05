@@ -16,8 +16,8 @@
   include("timeutils.php");
   include("dbutils.php");
   include("../config/config.php.inc");
-
-  $conn = pg_connect($db_conn_string) or die('Could not connect: ' . pg_last_error());
+  
+  connect($db_conn_string, $db_search_path);
 
   $count = get_one_data("SELECT count(id) as count from  relations WHERE tags -> 'admin_level' = '8'", "count");
 
@@ -42,9 +42,9 @@
     echo "Computing city ways for $name ($id) (progress: ".($loop_index-1)."/$count)\n";
     time_start();
     if ($has_linestring_in_ways) {
-        safe_dml_query("INSERT INTO city_way SELECT $id,w.id, w.tags,  w.linestring from ways w, city_geom cg WHERE ST_Intersects(cg.geom_dump, w.linestring) AND cg.relation_id=$id");
+        safe_dml_query("INSERT INTO city_way SELECT $id,w.id, w.tags,  w.linestring from ways w, city_geom cg WHERE ST_Intersects(cg.geom_dump, w.linestring) AND cg.relation_id=$id AND ST_NumPoints(w.linestring) > 1");
     } else {
-        pg_query("INSERT INTO city_way SELECT $id,w.id, w.tags,  wg.geom from ways w, city_geom cg, way_geometry wg WHERE wg.way_id = w.id AND ST_Intersects(cg.geom_dump, wg.geom) AND cg.relation_id=$id");
+        safe_dml_query("INSERT INTO city_way SELECT $id,w.id, w.tags,  wg.geom from ways w, city_geom cg, way_geometry wg WHERE wg.way_id = w.id AND ST_Intersects(cg.geom_dump, wg.geom) AND cg.relation_id=$id");
     }
     time_end("ways");
   }
@@ -104,7 +104,7 @@
     /* Optional */
     $insee = get_one_data("SELECT tags -> 'ref:INSEE' as insee FROM relations where id=$id", "insee");
     $pop = get_one_data("SELECT population from dbpedia_city where insee='$insee'", "population");
-    $maire = get_one_data("SELECT maire from dbpedia_city where insee='$insee'", "maire");
+    $maire = et_one_data("SELECT maire from dbpedia_city where insee='$insee'", "maire");
     /* End optional */
 
 
