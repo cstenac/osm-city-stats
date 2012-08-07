@@ -13,10 +13,10 @@
   }
 
   $mode = $argv[1];
-  if ($mode = "relation") {
+  if ($mode == "relation") {
     $bbox = true;
     $bbox_query = "(SELECT geom as polygon from region_geom where relation_id = ".$argv[2].")";
-  } else if ($mode = "bbox") {
+  } else if ($mode == "bbox") {
     $bbox = true;
     $bbox_query = $argv[2];
   } else {
@@ -25,10 +25,19 @@
  
   connect($db_conn_string, $db_search_path);
  
-  $count = get_one_data("SELECT count(relation_id) as count from city_geom WHERE geom_dump &&  $bbox_query", "count");
+  if ($bbox) { 
+    $count = get_one_data("SELECT count(relation_id) as count from city_geom WHERE geom_dump &&  $bbox_query", "count");
+  } else {
+    $count = get_one_data("SELECT count(relation_id) as count from city_geom", "count");
+  }
   echo "Obtained target admin count: $count\n";
 
-  $query = "SELECT relation_id as id, city as name from city_geom WHERE geom_dump && $bbox_query";
+  if ($bbox) {
+    $query = "SELECT relation_id as id, city as name from city_geom WHERE geom_dump && $bbox_query";
+  } else {
+    $query = "SELECT relation_id as id, city as name from city_geom";
+  }
+
 
   pg_query("BEGIN");
   $result = pg_query($query);
