@@ -1,11 +1,8 @@
 --- vim: ts=2
 
---- Step 4 of the analysis:
+--- Analysis bootstrap:
 ---   Create a schema with one table for "nodes per city", one for "ways per city", and one for
 ---   "computed data per city"
-
---- Fill of this table is done in PHP by Step 5.
-
 
 
 -- Create list of ways for each city

@@ -3,12 +3,14 @@
    * Step 3 of the analysis: compute the polygon of each city from the administrative
    * boundaries in the DB
    */
-  
-  include("timeutils.php");
-  include("dbutils.php");
+
   include("../config/config.php.inc");
+  include("lib/sighandler.inc.php");
+  include("lib/timeutils.inc.php");
+  include("lib/dbutils.inc.php");
+  
   connect($db_conn_string, $db_search_path);
-  safe_dml_query("DELETE FROM city_geom");
+ // safe_dml_query("DELETE FROM city_geom");
 /*
   safe_dml_query("DROP TABLE IF EXISTS city_geom");
   safe_dml_query("CREATE TABLE city_geom(".
