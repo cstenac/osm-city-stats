@@ -20,7 +20,7 @@
   if (!$has_linestring_in_ways) {
     /* Compute a polygon using flat geometry */ 
     safe_dml_query("INSERT INTO region_geom(relation_id,  geom) ".
-    "SELECT r.id, MIN(hstore(r.tags) -> 'name') , ST_Polygonize(way_geometry.geom) geom ".
+    "SELECT r.id, ST_Polygonize(way_geometry.geom) geom ".
 	"FROM way_geometry ".
 	"	INNER JOIN ways on ways.id=way_geometry.way_id ".
 	"        INNER JOIN relation_members rn on rn.member_id = ways.id ".

@@ -44,10 +44,10 @@
 
     } else {
         /*  add a linestring for every way (create a polyline) */
-        safe_dml_query("INSERT INTO way_geometry select id, ".
+        safe_dml_query("INSERT INTO way_geometry select id, ways.tags, ".
             "( select ST_LineFromMultiPoint( Collect(nodes.geom) ) from nodes ".
             "left join way_nodes on nodes.id=way_nodes.node_id where way_nodes.way_id=ways.id ) FROM ways");
-        safe_dml_query("CREATE INDEX idx_way_geometry_way_id ON way_geometry USING btree (way_id)");
-        safe_dml_query("CREATE INDEX idx_way_geometry_geom ON way_geometry USING gist (geom)");
     }
+    safe_dml_query("CREATE INDEX idx_way_geometry_way_id ON way_geometry USING btree (way_id)");
+    safe_dml_query("CREATE INDEX idx_way_geometry_geom ON way_geometry USING gist (geom)");
 ?>

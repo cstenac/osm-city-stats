@@ -13,10 +13,10 @@
   }
 
   $mode = $argv[1];
-  if ($mode = "relation") {
+  if ($mode == "relation") {
     $bbox = true;
     $bbox_query = "(SELECT geom as polygon from region_geom where relation_id = ".$argv[2].")";
-  } else if ($mode = "bbox") {
+  } else if ($mode == "bbox") {
     $bbox = true;
     $bbox_query = $argv[2];
   } else {
@@ -24,11 +24,19 @@
   }
  
   connect($db_conn_string, $db_search_path);
- 
-  $count = get_one_data("SELECT count(relation_id) as count from city_geom WHERE geom_dump && $bbox_query", "count");
+   if ($bbox) { 
+    $count = get_one_data("SELECT count(relation_id) as count from city_geom WHERE geom_dump &&  $bbox_query", "count");
+  } else {
+    $count = get_one_data("SELECT count(relation_id) as count from city_geom", "count");
+  }
   echo "Obtained target admin count: $count\n";
 
-  $query = "SELECT relation_id as id, city as name from city_geom WHERE geom_dump && $bbox_query";
+  if ($bbox) {
+    $query = "SELECT relation_id as id, city as name from city_geom WHERE geom_dump && $bbox_query";
+  } else {
+    $query = "SELECT relation_id as id, city as name from city_geom";
+  }
+
 
 
   $result = pg_query($query);
@@ -36,10 +44,13 @@
   while ($line = pg_fetch_array($result, null, PGSQL_ASSOC)) {
     $id = $line["id"];
     $name = $line["name"];
+    $loop_index++;
+    /*
     if ($loop_index++ % $modulo != $selected_modulo) {
         echo "Ignoring $name ($id) (modulo)\n";
         continue;
     }
+    */
     # Start by cleaning our own data to make this script replayable
     pg_query("DELETE FROM city_data where relation_id=$id");
     
