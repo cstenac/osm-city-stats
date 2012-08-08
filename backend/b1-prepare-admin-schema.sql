@@ -8,12 +8,14 @@ DROP TABLE IF EXISTS city_geom;
 create table city_geom (
   relation_id INTEGER,
   city TEXT,
-	geog geography("POLYGON", 4326)
+	geog geography("POLYGON", 4326),
+	needs_compute INTEGER,
 );
 SELECT AddGeometryColumn('', 'city_geom', 'geom', 4326, 'GEOMETRY', 2);;
 SELECT AddGeometryColumn('', 'city_geom', 'geom_dump', 4326, 'GEOMETRY', 2);;
 CREATE INDEX idx_city_geom_geog ON city_geom using gist(geog);
 CREATE INDEX idx_city_geom_geom_dump ON city_geom using gist(geom_dump);
+CREATE INDEX idx_city_geom_relation_id ON city_geom using btree(relation_id);
 
 -- Create list of ways for each city
 -- Here, we recompute the geometry of each way as a geography for computations

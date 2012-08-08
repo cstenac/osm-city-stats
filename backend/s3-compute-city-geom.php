@@ -34,7 +34,7 @@
     "            AND rn.member_type='W' AND hstore(r.tags) -> 'admin_level' = '8' GROUP BY r.id;");
   } else {
 	  */
-    $result = pg_query("SELECT id from relations r where r.tags -> 'admin_level' = '8'") or die("Query failed");
+    $result = pg_query("SELECT id from relations r where r.tags -> 'admin_level' = '8' AND NOT r.tags -> 'boundary' = 'religious_administration'") or die("Query failed");
     $beg = microtime(true);
     $count = 0;
     $errors = Array();
@@ -58,14 +58,14 @@
 	safe_dml_query("DELETE FROM city_geom where relation_id=$id");
 
         if (!$has_linestring_in_ways) {
-	    $ret = dml_query("INSERT INTO city_geom(relation_id, city, geom) SELECT r.id, MIN(hstore(r.tags) -> 'name'),".
+	    $ret = dml_query("INSERT INTO city_geom(needs_compute, relation_id, city, geom) SELECT 1, r.id, MIN(hstore(r.tags) -> 'name'),".
 	                   " ST_Polygonize(way_geometry.geom) geom FROM way_geometry ".
 		           " INNER JOIN relation_members rn on rn.member_id = way_geometry.way_id ".
 			   " INNER JOIN relations r on rn.relation_id = r.id ".
 			   " WHERE rn.member_type='W' AND hstore(r.tags) -> 'admin_level' = '8' AND r.id=$id GROUP BY r.id");
     	} else {
-       $ret = dml_query("INSERT INTO city_geom(relation_id, city, geom) ".
-    "SELECT r.id, MIN(hstore(r.tags) -> 'name') , ST_Polygonize(ways.linestring) geom ".
+       $ret = dml_query("INSERT INTO city_geom(needs_compute, relation_id, city, geom) ".
+    "SELECT 1, r.id, MIN(hstore(r.tags) -> 'name') , ST_Polygonize(ways.linestring) geom ".
         "FROM ways ".
         "        INNER JOIN relation_members rn on rn.member_id = ways.id ".
         "        INNER JOIN relations r  on rn.relation_id = r.id WHERE r.id=$id GROUP BY r.id");

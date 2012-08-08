@@ -27,20 +27,21 @@
    if ($bbox) { 
     $count = get_one_data("SELECT count(relation_id) as count from city_geom WHERE geom_dump &&  $bbox_query", "count");
   } else {
-    $count = get_one_data("SELECT count(relation_id) as count from city_geom", "count");
+    $count = get_one_data("SELECT count(relation_id) as count from city_geom where needs_compute=1", "count");
   }
   echo "Obtained target admin count: $count\n";
 
   if ($bbox) {
     $query = "SELECT relation_id as id, city as name from city_geom WHERE geom_dump && $bbox_query";
   } else {
-    $query = "SELECT relation_id as id, city as name from city_geom";
+    $query = "SELECT relation_id as id, city as name from city_geom where needs_compute=1";
   }
 
 
 
   $result = pg_query($query);
   $loop_index = 0;
+//  pg_query("begin");
   while ($line = pg_fetch_array($result, null, PGSQL_ASSOC)) {
     $id = $line["id"];
     $name = $line["name"];
@@ -60,6 +61,7 @@
     $insee = get_one_data("SELECT tags -> 'ref:INSEE' as insee FROM relations where id=$id", "insee");
     $pop = get_one_data("SELECT population from dbpedia_city where insee='$insee'", "population");
     $maire = get_one_data("SELECT maire from dbpedia_city where insee='$insee'", "maire");
+    $maire = str_replace("'", " ", $maire);
     /* End optional */
 
 
@@ -91,3 +93,6 @@
     pg_query($finq);
     time_end("stats");
   }
+//  pg_query("commit");
+
+?>

@@ -30,26 +30,23 @@
   if ($bbox) { 
     $count = get_one_data("SELECT count(relation_id) as count from city_geom WHERE geom_dump &&  $bbox_query", "count");
   } else {
-    $count = get_one_data("SELECT count(relation_id) as count from city_geom", "count");
+    $count = get_one_data("SELECT count(relation_id) as count from city_geom where needs_compute=1", "count");
   }
   echo "Obtained target admin count: $count\n";
 
   if ($bbox) {
     $query = "SELECT relation_id as id, city as name from city_geom WHERE geom_dump && $bbox_query";
   } else {
-    $query = "SELECT relation_id as id, city as name from city_geom";
+    $query = "SELECT relation_id as id, city as name from city_geom where needs_compute=1";
   }
 
   pg_query("BEGIN");
   $result = pg_query($query);
   $loop_index = 0;
   while ($line = pg_fetch_array($result, null, PGSQL_ASSOC)) {
+    $loop_index++;
     $id = $line["id"];
     $name = $line["name"];
-    if ($loop_index++ % $modulo != $selected_modulo) {
-        echo "Ignoring $name ($id) (modulo)\n";
-        continue;
-    }
     # Start by cleaning our own data to make this script replayable
     pg_query("DELETE FROM city_way where relation_id=$id");
     echo "Computing city ways for $name ($id) (progress: ".($loop_index-1)."/$count)\n";
