@@ -37,7 +37,31 @@
     $query = "SELECT relation_id as id, city as name from city_geom where needs_compute=1";
   }
 
+  function count_tag($id, $isNode, $isWay, $isCW, $tagExpr) {
+    $count = 0;
+    if ($isNode ){
+      $count += get_one_data("SELECT COUNT(*) AS count FROM city_node where relation_id=$id and $tagExpr", "count");
+    }
+    if ($isWay){
+      $count += get_one_data("SELECT COUNT(*) AS count FROM city_way where relation_id=$id and $tagExpr", "count");
+    }
+     if ($isCW){
+      $count += get_one_data("SELECT COUNT(*) AS count FROM city_closedway where relation_id=$id and $tagExpr", "count");
+    }
+    return $count;
+  }
 
+  function compute_hw_data($id, $head_tag) {
+    $query = "INSERT INTO city_w_data (relation_id, type, count, length, total_length) SELECT $id, ".
+    	    " '$head_tag:' || (tags -> '$head_tag'), COUNT(*), SUM(ST_Length(ST_Intersection(city_way.geog, cg.geog))), SUM(ST_Length(city_way.geog)) ".
+    	     "FROM city_way INNER JOIN city_geom cg on cg.relation_id = city_way.relation_id WHERE city_way.relation_id=$id ".
+	     "AND tags ? '$head_tag' GROUP BY tags -> '$head_tag' ";
+    $result = pg_query($query);
+    /*
+    while ($line = pg_fetch_array($result, null, PGSQL_ASSOC)) {
+	print_r($line);
+    }*/
+  }
 
   $result = pg_query($query);
   $loop_index = 0;
@@ -54,9 +78,17 @@
     */
     # Start by cleaning our own data to make this script replayable
     pg_query("DELETE FROM city_data where relation_id=$id");
+    pg_query("DELETE FROM city_w_data where relation_id=$id");
     
     echo "Computing stats for $name ($id) (progress: ".($loop_index-1)."/$count)\n";
     time_start("stats");
+
+    compute_hw_data($id, "highway");
+    compute_hw_data($id, "railway");
+    compute_hw_data($id, "cycleway");
+    compute_hw_data($id, "waterway");
+    compute_hw_data($id, "power");
+
     /* Optional */
     $insee = get_one_data("SELECT tags -> 'ref:INSEE' as insee FROM relations where id=$id", "insee");
     $pop = get_one_data("SELECT population from dbpedia_city where insee='$insee'", "population");
@@ -76,19 +108,32 @@
     $rc = get_one_data("SELECT COUNT(*) as count FROM city_way where relation_id=$id and tags -> 'landuse' = 'residential'", "count");
     $ra = get_one_data("SELECT SUM(ST_Area(geog)) as area FROM city_closedway where relation_id=$id and tags -> 'landuse' = 'residential'", "area"); if (!isset($ra)) $ra = 0;
 
-    $place = get_one_data("SELECT COUNT(*) AS count FROM city_closedway where relation_id=$id and tags ? 'place'", "count");
-    $place += get_one_data("SELECT COUNT(*) AS count FROM city_node where relation_id=$id and tags ? 'place' ", "count");
+    $place = count_tag($id, True, False, True, "tags ? 'place'");
+    $townhall = count_tag($id, True, False, True, "tags -> 'amenity' = 'townhall'");
+    $school = count_tag($id, True, False, True, "tags -> 'amenity' = 'school'");
+    $pow = count_tag($id, True, False, True, "tags -> 'amenity' = 'place_of_worship'");
 
-    $townhall = get_one_data("SELECT COUNT(*) AS count FROM city_closedway where relation_id=$id and tags -> 'amenity' = 'townhall'", "count");
-    $townhall += get_one_data("SELECT COUNT(*) AS count FROM city_node where relation_id=$id and tags -> 'amenity' = 'townhall'", "count");
+    $shops = count_tag($id, True, False, True, "tags ? 'shop'");
+    $offices = count_tag($id, True, False, True, "tags ? 'office'");
+    $amenities = count_tag($id, True, False, True, "tags ? 'amenity'");
+    $leisures = count_tag($id, True, False, True, "tags ? 'leisure'");
+    $crafts = count_tag($id, True, False, True, "tags ? 'craft'");
+    $emergencies = count_tag($id, True, False, True, "tags ? 'emergency'");
+    $tourisms = count_tag($id, True, False, True, "tags ? 'tourism'");
+    $historics = count_tag($id, True, False, True, "tags ? 'historic'");
+    $militaries = count_tag($id, True, False, True, "tags ? 'military'");
 
-    $school = get_one_data("SELECT COUNT(*) AS count FROM city_closedway where relation_id=$id and tags -> 'amenity' = 'school'", "count");
-    $school += get_one_data("SELECT COUNT(*) AS count FROM city_node where relation_id=$id and tags -> 'amenity' = 'school'", "count");
-
-    $pow = get_one_data("SELECT COUNT(*) AS count FROM city_closedway where relation_id=$id and tags -> 'amenity' = 'place_of_worship'", "count");
-    $pow += get_one_data("SELECT COUNT(*) AS count FROM city_node where relation_id=$id and tags -> 'amenity' = 'place_of_worship'", "count");
-
-    $finq = "INSERT INTO city_data(relation_id, area, highway_length, highway_count, residential_highway_length, residential_highway_count, building_count, building_area, residential_count, residential_area, places, townhalls, schools, pows, insee, population, maire) VALUES($id, $area, $hwl, $hwc, $rhwl, $rhwc, $bc, $ba, $rc, $ra, $place, $townhall,$school, $pow, '$insee', $pop, '$maire')";
+    $finq = "INSERT INTO city_data(relation_id, area, highway_length, highway_count, ".
+    	   "residential_highway_length, residential_highway_count, building_count, building_area, ".
+	   "residential_count, residential_area, ".
+	   "places, townhalls, schools, pows, shops, offices, amenities, leisures, ".
+	   "crafts, emergencies, tourisms, historics, militaries, ".
+	   "insee, population, maire) VALUES($id, $area, $hwl, $hwc, ".
+	   "$rhwl, $rhwc, $bc, $ba, ".
+	   "$rc, $ra, ".
+	   "$place, $townhall,$school, $pow, $shops, $offices, $amenities, $leisures, ".
+	   "$crafts, $emergencies, $tourisms, $historics, $militaries, ".
+	   "'$insee', $pop, '$maire')";
     echo " $finq\n";
     pg_query($finq);
     time_end("stats");

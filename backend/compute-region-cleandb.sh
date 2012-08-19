@@ -34,6 +34,6 @@ php s4b-compute-target-closedways.php full
 php s4c-compute-target-nodes.php full
 
 banner "Computing city data"
-php s5-compute-target-data.php full
+#php s5-compute-target-data.php full
 
 banner "Done"

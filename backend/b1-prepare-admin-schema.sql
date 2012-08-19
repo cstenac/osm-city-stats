@@ -9,7 +9,7 @@ create table city_geom (
   relation_id INTEGER,
   city TEXT,
 	geog geography("POLYGON", 4326),
-	needs_compute INTEGER,
+	needs_compute INTEGER
 );
 SELECT AddGeometryColumn('', 'city_geom', 'geom', 4326, 'GEOMETRY', 2);;
 SELECT AddGeometryColumn('', 'city_geom', 'geom_dump', 4326, 'GEOMETRY', 2);;
@@ -52,7 +52,22 @@ CREATE INDEX idx_city_node_relation_id ON city_node(relation_id);
 
 -- Fill of table city_node is done by s5---.php
 
+DROP TABLE IF EXISTS city_w_data;
+CREATE TABLE city_w_data (
+  type VARCHAR(64), -- highway:primary, railway:rail, waterway:stream, power:line, ...
+	relation_id INTEGER,
+	count INTEGER,
+  length FLOAT
+);
+CREATE INDEX ON city_w_data(type, relation_id);
 
+DROP TABLE IF EXISTS city_land_data;
+CREATE TABLE city_land_data (
+  type VARCHAR(64),
+	relation_id INTEGER,
+	area FLOAT
+);
+CREATE INDEX ON city_land_data(type, relation_id);
 
 DROP TABLE IF EXISTS city_data;
 CREATE TABLE city_data  (
@@ -73,6 +88,16 @@ CREATE TABLE city_data  (
   townhalls INTEGER,
   schools INTEGER,
   pows INTEGER,
+
+	shops INTEGER,
+	offices INTEGER,
+	amenities INTEGER,
+	leisures INTEGER,
+  crafts INTEGER,
+	emergencies INTEGER,
+	tourisms INTEGER,
+	historics INTEGER,
+  militaries INTEGER,
 
   insee VARCHAR(100),
   population INTEGER,
