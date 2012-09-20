@@ -63,6 +63,24 @@
     }*/
   }
 
+  function compute_a_data($id, $head_tag) {
+    $query = "INSERT INTO city_a_data (relation_id, type, count, area, total_area) SELECT $id, ".
+    	    " '$head_tag:' || (tags -> '$head_tag'), COUNT(*), SUM(ST_Area(ST_Intersection(city_closedway.geog, cg.geog))), SUM(ST_Area(city_closedway.geog)) ".
+    	     "FROM city_closedway INNER JOIN city_geom cg on cg.relation_id = city_closedway.relation_id WHERE city_closedway.relation_id=$id ".
+	     "AND tags ? '$head_tag' GROUP BY tags -> '$head_tag' ";
+    $result = pg_query($query);
+  }
+  function compute_n_data($id, $head_tag) {
+    $query = "INSERT INTO city_n_data (relation_id, type, count) SELECT $id, ".
+    	    " '$head_tag:' || (tags -> '$head_tag'), COUNT(*) ".
+    	     "FROM city_node INNER JOIN city_geom cg on cg.relation_id = city_node.relation_id WHERE city_node.relation_id=$id ".
+	     "AND tags ? '$head_tag' GROUP BY tags -> '$head_tag' ";
+    $result = pg_query($query);
+  }
+
+
+
+
   $result = pg_query($query);
   $loop_index = 0;
 //  pg_query("begin");
@@ -79,6 +97,7 @@
     # Start by cleaning our own data to make this script replayable
     pg_query("DELETE FROM city_data where relation_id=$id");
     pg_query("DELETE FROM city_w_data where relation_id=$id");
+    pg_query("DELETE FROM city_a_data where relation_id=$id");
     
     echo "Computing stats for $name ($id) (progress: ".($loop_index-1)."/$count)\n";
     time_start("stats");
@@ -88,6 +107,12 @@
     compute_hw_data($id, "cycleway");
     compute_hw_data($id, "waterway");
     compute_hw_data($id, "power");
+    
+    compute_a_data($id, "landuse");
+//    compute_a_data($id, "building");
+    compute_a_data($id, "leisure");
+
+    compute_n_data($id, "place");
 
     /* Optional */
     $insee = get_one_data("SELECT tags -> 'ref:INSEE' as insee FROM relations where id=$id", "insee");

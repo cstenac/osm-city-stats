@@ -57,17 +57,32 @@ CREATE TABLE city_w_data (
   type VARCHAR(64), -- highway:primary, railway:rail, waterway:stream, power:line, ...
 	relation_id INTEGER,
 	count INTEGER,
-  length FLOAT
+  length FLOAT,
+	total_length FLOAT
 );
 CREATE INDEX ON city_w_data(type, relation_id);
+CREATE INDEX ON city_w_data(relation_id);
 
-DROP TABLE IF EXISTS city_land_data;
-CREATE TABLE city_land_data (
+DROP TABLE IF EXISTS city_a_data;
+CREATE TABLE city_a_data (
   type VARCHAR(64),
 	relation_id INTEGER,
-	area FLOAT
+	count INTEGER,
+	area FLOAT,
+	total_area FLOAT
 );
-CREATE INDEX ON city_land_data(type, relation_id);
+CREATE INDEX ON city_a_data(type, relation_id);
+CREATE INDEX ON city_a_data(relation_id);
+
+DROP TABLE IF EXISTS city_n_data;
+CREATE TABLE city_n_data (
+  type VARCHAR(64),
+	relation_id INTEGER,
+	count INTEGER
+);
+CREATE INDEX ON city_n_data(relation_id);
+
+
 
 DROP TABLE IF EXISTS city_data;
 CREATE TABLE city_data  (
