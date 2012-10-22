@@ -38,10 +38,11 @@
     $beg = microtime(true);
     $count = 0;
     $errors = Array();
+    $num = pg_num_rows($result);
     while ($line = pg_fetch_array($result, null, PGSQL_ASSOC)) {
       $id = $line["id"];
       $t = round( (microtime(true) - $beg) * 1000);
-      echo "City $id ($count - $t ms total - ".count($errors)." errors)\n";
+      echo "City $id ($count/$num - $t ms total - ".count($errors)." errors)\n";
  	$count++;
 /*
 	if ($id == 42288) continue; // Unknown geometry type 0
@@ -54,6 +55,13 @@
 	if ($id == 452987) continue; // lwsgeom
 	if ($id == 452997) continue; // lwsgeom
 */
+
+    // INCREMENTAL MODE
+    if (pg_num_rows(pg_query("SELECT relation_id from city_geom where relation_id=$id")) > 0) {
+        echo "Skipping $id\n";
+        continue;
+    }
+
 
 	safe_dml_query("DELETE FROM city_geom where relation_id=$id");
 
