@@ -47,3 +47,5 @@ TODO / Next steps
  * (P1) Ability to historize the data
  * (P2) Ability to have the analysis a bit more incremental
  * (P1) Performance improvements / Multithreading
+
+Change in all-code

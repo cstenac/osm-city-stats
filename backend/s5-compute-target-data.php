@@ -15,7 +15,7 @@
   $mode = $argv[1];
   if ($mode == "relation") {
     $bbox = true;
-    $bbox_query = "(SELECT geom as polygon from region_geom where relation_id = ".$argv[2].")";
+    $bbox_query = "(SELECT geom as polygon from admin_geom where relation_id = ".$argv[2].")";
   } else if ($mode == "bbox") {
     $bbox = true;
     $bbox_query = $argv[2];
@@ -24,19 +24,21 @@
   }
  
   connect($db_conn_string, $db_search_path);
-   if ($bbox) { 
-    $count = get_one_data("SELECT count(relation_id) as count from city_geom WHERE geom_dump &&  $bbox_query", "count");
+
+  if ($bbox) { 
+    $count = get_one_data("SELECT count(relation_id) as count from admin_geom WHERE tags->'admin_level' = '8' and geom_dump &&  $bbox_query", "count");
   } else {
     $count = get_one_data("SELECT count(relation_id) as count from city_geom where needs_compute=1", "count");
   }
   echo "Obtained target admin count: $count\n";
 
   if ($bbox) {
-    $query = "SELECT relation_id as id, city as name from city_geom WHERE geom_dump && $bbox_query";
+    $query = "SELECT relation_id as id, name from admin_geom WHERE tags->'admin_level' = '8' and geom_dump && $bbox_query";
   } else {
     $query = "SELECT relation_id as id, city as name from city_geom where needs_compute=1";
   }
 
+<<<<<<< HEAD
   function count_tag($id, $isNode, $isWay, $isCW, $tagExpr) {
     $count = 0;
     if ($isNode ){
@@ -77,7 +79,6 @@
 	     "AND tags ? '$head_tag' GROUP BY tags -> '$head_tag' ";
     $result = pg_query($query);
   }
-
 
 
 
